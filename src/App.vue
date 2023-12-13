@@ -1,23 +1,13 @@
 <script setup>
-import { reactive } from "vue";
+import { reactive, onMounted, onBeforeUnmount } from "vue";
+import Cabecalho from "./components/Cabecalho.vue";
+import Formulario from "./components/Formulario.vue";
+import ListaDeTarefas from "./components/ListaDeTarefas.vue";
 
 const estado = reactive({
   filtro: "todas",
   tarefaTemp: "",
-  tarefas: [
-    {
-      titulo: "Estudar ES6",
-      finalizada: false,
-    },
-    {
-      titulo: "Estudar SASS",
-      finalizada: true,
-    },
-    {
-      titulo: "Estudar HTML",
-      finalizada: true,
-    },
-  ],
+  tarefas: [],
 });
 
 const getTarefasPendentes = () => {
@@ -48,66 +38,47 @@ const cadastrarTarefa = () => {
   };
   estado.tarefas.push(tarefaNova);
   estado.tarefaTemp = "";
+  salvarNoLocalStorage();
 };
+
+const salvarNoLocalStorage = () => {
+  localStorage.setItem("tarefas", JSON.stringify(estado.tarefas));
+};
+
+const carregarDoLocalStorage = () => {
+  const tarefasSalvas = localStorage.getItem("tarefas");
+  if (tarefasSalvas) {
+    estado.tarefas = JSON.parse(tarefasSalvas);
+  }
+};
+
+onMounted(() => {
+  carregarDoLocalStorage();
+});
+
+onBeforeUnmount(() => {
+  salvarNoLocalStorage();
+});
 </script>
 
 <template>
   <div class="container">
-    <header class="p-5 mb-4 mt-4 bg-light rounded-3">
-      <h1>Minhas tarefas</h1>
-      <p>Você possui {{ getTarefasPendentes().length }} tarefas pendentes</p>
-    </header>
-    <form @submit.prevent="cadastrarTarefa">
-      <div class="row">
-        <div class="col">
-          <input
-            :value="estado.tarefaTemp"
-            @change="(evento) => (estado.tarefaTemp = evento.target.value)"
-            required
-            class="form-control"
-            type="text"
-            name=""
-            id=""
-            placeholder="Digite aqui a descrição da tarefa"
-          />
-        </div>
-        <div class="col-md-2">
-          <button class="btn btn-primary" type="submit">Cadastrar</button>
-        </div>
-        <div class="col-md-2">
-          <select
-            class="form-control"
-            @change="(evento) => (estado.filtro = evento.target.value)"
-          >
-            <option value="todas">Todas tarefas</option>
-            <option value="pendentes">Pendentes</option>
-            <option value="finalizadas">Finalizadas</option>
-          </select>
-        </div>
-      </div>
-    </form>
-    <ul class="list-group mt-4">
-      <li class="list-group-item" v-for="tarefa in getTarefasFiltradas()">
-        <input
-          @change="(evento) => (tarefa.finalizada = evento.target.checked)"
-          :checked="tarefa.finalizada"
-          :id="tarefa.titulo"
-          type="checkbox"
-        />
-        <label
-          :class="{ done: tarefa.finalizada }"
-          class="ms-3"
-          :for="tarefa.titulo"
-        >
-          {{ tarefa.titulo }}</label
-        >
-      </li>
-    </ul>
+    <Cabecalho :tarefas-pendentes="getTarefasPendentes().length" />
+    <Formulario
+      :troca-filtro="(evento) => (estado.filtro = evento.target.value)"
+      :tarefa-temp="estado.tarefaTemp"
+      :edita-tarefa-temp="(evento) => (estado.tarefaTemp = evento.target.value)"
+      :cadastra-tarefa="cadastrarTarefa"
+    />
+    <ListaDeTarefas :tarefas="getTarefasFiltradas()" />
   </div>
 </template>
 
 <style scoped>
-.done {
-  text-decoration: line-through;
+header {
+  background-image: url("https://images.unsplash.com/photo-1484480974693-6ca0a78fb36b?q=80&w=2072&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center right;
 }
 </style>
